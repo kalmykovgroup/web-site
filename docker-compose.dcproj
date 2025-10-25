@@ -11,8 +11,6 @@
     <None Include=".dockerignore" />
     <None Include="secrets\db_password.txt" />
     <None Include="secrets\db_user.txt" />
-    <None Include="setup-ssl.sh" />
-    <None Include="start-docker.sh" />
   </ItemGroup>
   <ItemGroup>
     <Content Include=".env" />

@@ -3,9 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     
-    <!-- Favicon: SVG для современных браузеров, ICO для старых -->
+    <!-- Favicon: SVG для современных браузеров -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
     
     <!-- Apple Touch Icon -->
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
@@ -50,8 +49,12 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="СтройХозМаг" />
     
-    <!-- DNS Prefetch -->
+    <!-- Resource Hints для оптимизации загрузки -->
+    <link rel="preconnect" href="https://volnaya-28.ru" />
     <link rel="dns-prefetch" href="https://volnaya-28.ru" />
+
+    <!-- Preload критических ресурсов -->
+    <link rel="modulepreload" href="data:application/octet-stream;base64,CmltcG9ydCB7IGNyZWF0ZVJvb3QgfSBmcm9tICdyZWFjdC1kb20vY2xpZW50JwppbXBvcnQgJy4vaW5kZXguY3NzJwppbXBvcnQgQXBwIGZyb20gJy4vQXBwLnRzeCcKaW1wb3J0IHtQcm92aWRlcn0gZnJvbSAicmVhY3QtcmVkdXgiOwppbXBvcnQge0Jyb3dzZXJSb3V0ZXJ9IGZyb20gInJlYWN0LXJvdXRlci1kb20iOwppbXBvcnQgeyBQZXJzaXN0R2F0ZSB9IGZyb20gJ3JlZHV4LXBlcnNpc3QvaW50ZWdyYXRpb24vcmVhY3QnOwppbXBvcnQge2FwaUNsaWVudH0gZnJvbSAiQC9iYXNlQXBpL2FwaUNsaWVudC50cyI7CmltcG9ydCB7c2V0dXBJbnRlcmNlcHRvcnN9IGZyb20gIkAvYmFzZUFwaS9pbnRlcmNlcHRvcnMudHMiOwppbXBvcnQge3BlcnNpc3Rvciwgc3RvcmV9IGZyb20gIkAvc3RvcmUudHMiOwovLyDQn9C10YDQtdC00LDRkdC8IHN0b3JlINCyIGludGVyY2VwdG9ycyDQuCDQvdCw0YHRgtGA0LDQuNCy0LDQtdC8CnNldHVwSW50ZXJjZXB0b3JzKGFwaUNsaWVudCk7CgoKLy8g0KTRg9C90LrRhtC40L7QvdCw0LvRjNC90YvQuSDQutC+0LzQv9C+0L3QtdC90YIg0LTQu9GPINC40L3QuNGG0LjQsNC70LjQt9Cw0YbQuNC4IFBlcnNpc3QgKNGB0LHRgNC+0YEgdHJhbnNpZW50INC/0L7Qu9C10Lkg0L/QvtGB0LvQtSByZWh5ZHJhdGUpCgpjcmVhdGVSb290KGRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCdyb290JykhKS5yZW5kZXIoCiAgICAvKioKICAgICAqINCa0L7RgNC90LXQstC+0Lkg0YDQtdC90LTQtdGAINC/0YDQuNC70L7QttC10L3QuNGPLgogICAgICoKICAgICAqINCe0LHQvtGA0LDRh9C40LLQsNC10Lwg0LLRgdGRINC/0YDQuNC70L7QttC10L3QuNC1INCyIFJlZHV4IFByb3ZpZGVyIOKAlCDRh9GC0L7QsdGLINGB0LTQtdC70LDRgtGMIFJlZHV4IHN0b3JlINC00L7RgdGC0YPQv9C90YvQvCDQtNC70Y8g0LLRgdC10YUg0LrQvtC80L/QvtC90LXQvdGC0L7Qsi4KICAgICAqIFBlcnNpc3RHYXRlINGBIGxvYWRpbmc9e251bGx9INC90LUg0LHQu9C+0LrQuNGA0YPQtdGCINGA0LXQvdC00LXRgNC40L3Qsywg0L/QvtC30LLQvtC70Y/RjyDQv9GA0LjQu9C+0LbQtdC90LjRjiDQt9Cw0LPRgNGD0LbQsNGC0YzRgdGPINCx0YvRgdGC0YDQtdC1LgogICAgICog0KHQvtGB0YLQvtGP0L3QuNC1INCy0L7RgdGB0YLQsNC90LDQstC70LjQstCw0LXRgtGB0Y8g0LIg0YTQvtC90LUsINGH0YLQviDRg9C70YPRh9GI0LDQtdGCIEZpcnN0IENvbnRlbnRmdWwgUGFpbnQuCiAgICAgKi8KICAgIDxQcm92aWRlciBzdG9yZT17c3RvcmV9PgogICAgICAgIDxQZXJzaXN0R2F0ZSBsb2FkaW5nPXtudWxsfSBwZXJzaXN0b3I9e3BlcnNpc3Rvcn0+CiAgICAgICAgICAgIDxCcm93c2VyUm91dGVyPgogICAgICAgICAgICAgICAgPEFwcCAvPgogICAgICAgICAgICA8L0Jyb3dzZXJSb3V0ZXI+CiAgICAgICAgPC9QZXJzaXN0R2F0ZT4KICAgIDwvUHJvdmlkZXI+Cik=" />
     
     <!-- Structured Data -->
     <script type="application/ld+json">
@@ -108,8 +111,8 @@
     </script>
     
     <title>СтройХозМаг - Лакокрасочные материалы и стройматериалы в Москве</title>
-    <script type="module" crossorigin src="/assets/index-CunIfeDU.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-CYkXkVXD.css">
+    <script type="module" crossorigin src="/assets/index-CsEb2-Uz.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-CjeYzzB_.css">
   </head>
   <body>
     <noscript>
