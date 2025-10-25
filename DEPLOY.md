@@ -92,22 +92,17 @@ ls -la secrets/
 ### Шаг 4: Запуск в production режиме
 
 ```bash
-# Делаем скрипты исполняемыми
-chmod +x start-docker.sh
-chmod +x setup-ssl.sh
-
-# Запускаем в production режиме
-# Скрипт автоматически прочитает DOMAIN и EMAIL из .env
-./start-docker.sh production
+# Запускаем все контейнеры
+docker compose up -d
 ```
 
-**Скрипт автоматически:**
-1. ✅ Загрузит конфигурацию из `.env`
+**Docker Compose автоматически:**
+1. ✅ Прочитает конфигурацию из `.env`
 2. ✅ Соберет Docker образы
-3. ✅ Запустит все контейнеры
-4. ✅ Проверит существующий SSL сертификат
-5. ✅ Если сертификата нет или он истек - получит новый
-6. ✅ Настроит nginx с HTTPS
+3. ✅ Запустит все контейнеры (PostgreSQL, Web API, Nginx, Certbot)
+4. ✅ Nginx проверит существующий SSL сертификат
+5. ✅ Если сертификата нет или он истек - получит новый от Let's Encrypt
+6. ✅ Настроит HTTPS автоматически
 
 ### Шаг 5: Проверка
 
@@ -193,12 +188,16 @@ docker-compose up -d --build
 
 ### Ручное обновление SSL
 
-```bash
-# Скрипт автоматически проверит валидность
-./setup-ssl.sh
+SSL сертификаты обновляются автоматически через Certbot каждые 12 часов.
 
-# Или явно указать домен и email (но они уже в .env)
-./setup-ssl.sh volnaya-28.ru admin@kalmykov-group.ru
+Если нужно принудительно обновить сертификат:
+
+```bash
+# Принудительное обновление через certbot
+docker compose run --rm certbot renew
+
+# Перезапустить nginx для применения
+docker compose restart nginx
 ```
 
 ## Автоматизация
@@ -275,13 +274,23 @@ docker stats
 curl -I http://volnaya-28.ru/.well-known/acme-challenge/test
 
 # Проверить логи certbot
-docker-compose logs certbot
+docker compose logs certbot
 
 # Проверить логи nginx
-docker-compose logs nginx
+docker compose logs nginx
 
 # Попробовать получить сертификат вручную
-./setup-ssl.sh volnaya-28.ru admin@kalmykov-group.ru
+docker compose run --rm certbot certonly \
+  --webroot \
+  --webroot-path=/var/www/certbot \
+  --email admin@kalmykov-group.ru \
+  --agree-tos \
+  --no-eff-email \
+  -d volnaya-28.ru \
+  -d www.volnaya-28.ru
+
+# Перезапустить nginx для применения
+docker compose restart nginx
 ```
 
 ### База данных не подключается
@@ -328,8 +337,8 @@ sudo rm -rf certbot/conf/live/*
 sudo rm -rf certbot/conf/archive/*
 sudo rm -rf certbot/conf/renewal/*
 
-# Запустить заново
-./start-docker.sh production
+# Запустить заново - SSL настроится автоматически
+docker compose up -d
 ```
 
 ## Безопасность

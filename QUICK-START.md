@@ -39,17 +39,17 @@ echo "production_user" > secrets/db_user.txt
 openssl rand -base64 32 > secrets/db_password.txt
 chmod 600 secrets/*
 
-# 4. Запустите сервисы
-docker-compose up -d
+# 4. Убедитесь что .env настроен с вашим доменом
+nano .env
+# DOMAIN=yourdomain.com
+# EMAIL=your@email.com
 
-# 5. Настройте SSL
-chmod +x setup-ssl.sh
-./setup-ssl.sh yourdomain.com your@email.com
+# 5. Запустите сервисы
+docker compose up -d
 
-# 6. Перезапустите nginx
-docker-compose restart nginx
+# SSL настроится автоматически!
 
-# 7. Готово!
+# 6. Готово!
 # Ваше приложение доступно: https://yourdomain.com
 ```
 

@@ -8,16 +8,15 @@
 ## Быстрый запуск
 
 ```bash
-# 1. Создайте секреты БД
-mkdir secrets
-echo "kalmykov" > secrets/db_user.txt
-openssl rand -base64 48 > secrets/db_password.txt
-chmod 600 secrets/*
+# 1. Убедитесь что .env настроен
+cat .env
+# Проверьте что DOMAIN, EMAIL, DB_USER и DB_PASSWORD заданы
 
-# 2. Запустите в production режиме
-./start-docker.sh production
+# 2. Запустите
+docker compose up -d
 
 # 3. Готово! Сайт доступен на https://volnaya-28.ru
+# SSL настроится автоматически
 ```
 
 ## Что настроено
@@ -88,20 +87,15 @@ git --version
 - ✅ Nginx использует готовый alpine образ
 - ❌ SSL сертификат НЕ запрашивается
 
-### 2. При docker-compose up
-- ✅ Nginx проверяет наличие сертификата
+### 2. При docker compose up -d
+- ✅ Docker Compose читает конфигурацию из .env
+- ✅ Запускает все контейнеры (PostgreSQL, Web API, Nginx, Certbot)
+- ✅ Nginx проверяет наличие SSL сертификата
 - ✅ Если сертификат валиден (> 30 дней) - использует его
-- ✅ Если нет - работает в HTTP режиме
-- ❌ Новый сертификат НЕ запрашивается
+- ✅ Если сертификата нет или невалиден - автоматически получает от Let's Encrypt
+- ✅ Настраивает HTTPS автоматически
 
-### 3. При ./start-docker.sh production
-- ✅ Загружает DOMAIN и EMAIL из .env
-- ✅ Запускает контейнеры
-- ✅ Автоматически вызывает setup-ssl.sh
-- ✅ setup-ssl.sh проверяет существующий сертификат
-- ✅ Запрашивает новый ТОЛЬКО если нужно
-
-### 4. Автоматическое обновление (certbot)
+### 3. Автоматическое обновление (certbot)
 - ✅ Проверяет сертификаты каждые 12 часов
 - ✅ Обновляет только если срок < 30 дней
 - ✅ Стандартный `certbot renew` без force
@@ -110,59 +104,35 @@ git --version
 
 ```
 WebSite/
-├── .env                        ✅ volnaya-28.ru, admin@kalmykov-group.ru
-├── docker-compose.yml          ✅ nginx + certbot + умный entrypoint
-├── start-docker.sh             ✅ читает .env, автоматический SSL
-├── setup-ssl.sh                ✅ умная проверка, без --force-renewal
+├── .env                        ✅ volnaya-28.ru, admin@kalmykov-group.ru, DB credentials
+├── docker-compose.yml          ✅ использует .env, автоматический SSL
 ├── nginx/
-│   ├── conf.d/default.conf    ✅ настроен для volnaya-28.ru
-│   ├── docker-entrypoint.sh   ✅ проверка SSL при запуске
-│   └── generate-config.sh     ✅ динамическая генерация
-├── secrets/                    ⚠️  создайте вручную
-│   ├── db_user.txt
-│   └── db_password.txt
-└── certbot/
-    ├── conf/                   ✅ SSL сертификаты (после запуска)
+│   ├── conf.d/default.conf    ✅ начальная конфигурация
+│   ├── docker-entrypoint.sh   ✅ проверка и получение SSL при запуске
+│   └── generate-config.sh     ✅ динамическая генерация конфигурации
+└── certbot/                    (создается автоматически)
+    ├── conf/                   ✅ SSL сертификаты
     └── www/                    ✅ ACME challenge
 ```
 
-## Поддерживаемые способы запуска
+## Способ запуска
 
-### Способ 1: Через start-docker.sh (рекомендуется)
-
-```bash
-./start-docker.sh production
-```
-
-Автоматически:
-- Читает .env
-- Запускает контейнеры
-- Настраивает SSL
-
-### Способ 2: Через docker-compose
+Проект настроен для запуска одной командой:
 
 ```bash
-docker-compose up -d
+docker compose up -d
 ```
 
-Контейнеры запустятся, но SSL нужно настроить вручную:
+Что происходит автоматически:
+- ✅ Docker Compose читает конфигурацию из .env
+- ✅ Запускает PostgreSQL с credentials из .env
+- ✅ Запускает ASP.NET Core Web API
+- ✅ Запускает Nginx с автоматической генерацией конфигурации
+- ✅ Nginx проверяет наличие SSL сертификата
+- ✅ Если сертификата нет или он невалиден - получает от Let's Encrypt
+- ✅ Запускает Certbot для автоматического обновления сертификатов
 
-```bash
-./setup-ssl.sh
-```
-
-### Способ 3: Ручная настройка
-
-```bash
-# Запуск контейнеров
-docker-compose up -d
-
-# Настройка SSL с явными параметрами
-./setup-ssl.sh volnaya-28.ru admin@kalmykov-group.ru
-
-# Перезапуск nginx
-docker-compose restart nginx
-```
+Готово! Сайт доступен по https://volnaya-28.ru
 
 ## После развертывания
 
@@ -215,10 +185,9 @@ docker-compose down
 
 # Обновление кода
 git pull
-docker-compose up -d --build
+docker compose up -d --build
 
-# Ручное обновление SSL (если нужно)
-./setup-ssl.sh
+# SSL обновляется автоматически через Certbot
 ```
 
 ## Документация

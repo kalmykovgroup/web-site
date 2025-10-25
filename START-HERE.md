@@ -4,40 +4,40 @@
 
 Все настроено для домена **volnaya-28.ru** с email **admin@kalmykov-group.ru**
 
-## 3 команды для запуска
+## Запуск одной командой
 
 ```bash
-# 1. Создайте секреты БД
-mkdir -p secrets
-echo "kalmykov" > secrets/db_user.txt
-openssl rand -base64 48 > secrets/db_password.txt
-chmod 600 secrets/*
+# Запустите проект
+docker compose up -d
 
-# 2. Запустите в production режиме
-chmod +x start-docker.sh setup-ssl.sh
-./start-docker.sh production
-
-# 3. Готово! Проверьте
-curl -I https://volnaya-28.ru
+# Готово! Проверьте
+curl -I http://volnaya-28.ru
 ```
+
+SSL сертификат будет получен автоматически при первом запуске (если домен настроен корректно).
 
 ## Что произойдет автоматически
 
-1. ✅ Скрипт определит версию Docker Compose (v1 или v2)
-2. ✅ Прочитает домен и email из `.env`
-3. ✅ Соберет и запустит все контейнеры
-4. ✅ Проверит существующий SSL сертификат
-5. ✅ Если нужно - получит новый от Let's Encrypt
-6. ✅ Настроит nginx с HTTPS
-7. ✅ Ваш сайт будет доступен по https://volnaya-28.ru
+1. ✅ Docker Compose прочитает конфигурацию из `.env`
+2. ✅ Запустит PostgreSQL с credentials из `.env`
+3. ✅ Запустит ASP.NET Core Web API
+4. ✅ Запустит Nginx с автоматической генерацией конфигурации
+5. ✅ Nginx проверит наличие SSL сертификата
+6. ✅ Если сертификата нет или он невалиден - получит новый от Let's Encrypt
+7. ✅ Запустит Certbot для автоматического обновления сертификатов
+8. ✅ Ваш сайт будет доступен по https://volnaya-28.ru
 
-## Поддержка Docker Compose v2
+## Важно
 
-Скрипты автоматически определяют версию:
-- `docker compose` (v2) - новая версия ✅
-- `docker-compose` (v1) - старая версия ✅
+Все настройки (домен, email, пароли БД) хранятся в файле `.env`:
+```env
+DOMAIN=volnaya-28.ru
+EMAIL=admin@kalmykov-group.ru
+DB_USER=kalmykov
+DB_PASSWORD=...
+```
 
-Оба варианта работают!
+**Перед первым запуском убедитесь, что DNS домена настроен** (A-запись указывает на IP сервера)
 
 ## Проверка после запуска
 
@@ -59,14 +59,14 @@ openssl s_client -connect volnaya-28.ru:443 -servername volnaya-28.ru
 ## Важные файлы
 
 ```
-.env                          # ✅ DOMAIN=volnaya-28.ru настроено
-docker-compose.yml            # ✅ готов к запуску
-start-docker.sh               # ✅ без BOM, поддержка v1/v2
-setup-ssl.sh                  # ✅ без BOM, умная проверка
-secrets/                      # ⚠️ создайте вручную
-  ├── db_user.txt            # kalmykov
-  └── db_password.txt        # безопасный пароль
+.env                          # ✅ Вся конфигурация (домен, email, пароли БД)
+docker-compose.yml            # ✅ Готов к запуску
+nginx/
+  ├── docker-entrypoint.sh   # ✅ Автоматическая настройка SSL
+  └── generate-config.sh     # ✅ Генерация конфигурации nginx
 ```
+
+**Примечание:** Пароли БД хранятся в `.env` - убедитесь, что файл защищен (chmod 600 .env)
 
 ## Управление
 
@@ -83,40 +83,24 @@ docker compose down
 # Обновление кода
 git pull
 docker compose up -d --build
-
-# Ручное обновление SSL
-./setup-ssl.sh
 ```
 
 ## Смена домена
 
 ```bash
-# 1. Изменить .env
+# 1. Изменить DOMAIN в .env
 nano .env
 
 # 2. Перезапустить
 docker compose down
 docker compose up -d
 
-# 3. Новый SSL
-./setup-ssl.sh
-
-# 4. Готово!
+# 3. Готово! SSL получится автоматически
 ```
 
 Подробнее: [CHANGE-DOMAIN.md](CHANGE-DOMAIN.md)
 
 ## Устранение проблем
-
-### Ошибка: "#!/bin/bash: not found"
-
-**Исправлено!** Скрипты пересозданы без BOM.
-
-### Ошибка: "docker-compose: command not found"
-
-**Исправлено!** Скрипты теперь поддерживают обе версии:
-- `docker compose` (v2)
-- `docker-compose` (v1)
 
 ### SSL не выпускается
 
@@ -139,15 +123,14 @@ docker compose logs nginx
 ### База данных не подключается
 
 ```bash
-# Проверьте секреты
-cat secrets/db_user.txt
-cat secrets/db_password.txt
+# Проверьте переменные окружения
+cat .env | grep DB_
 
 # Логи PostgreSQL
 docker compose logs postgres
 
 # Подключитесь напрямую
-docker compose exec postgres psql -U $(cat secrets/db_user.txt) -d web_site
+docker compose exec postgres psql -U kalmykov -d web_site
 ```
 
 ## Дополнительная документация
