@@ -117,7 +117,7 @@ namespace WebSite.Api
                         else
                         {
                             // Fallback если CORS_ORIGINS не задан
-                            policy.WithOrigins("https://yourdomain.com")
+                            policy.WithOrigins("https://volnaya-28.ru")
                                 .AllowAnyHeader()
                                 .AllowAnyMethod()
                                 .AllowCredentials();
