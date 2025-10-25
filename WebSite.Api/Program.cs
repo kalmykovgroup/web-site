@@ -128,14 +128,56 @@ namespace WebSite.Api
 
             var app = builder.Build();
 
-            // Database seeding ������ ��� Development
-            if (app.Environment.IsDevelopment())
+            // Database initialization and seeding
+            using (var scope = app.Services.CreateScope())
             {
-                using var scope = app.Services.CreateScope();
                 var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-                dbContext.Database.EnsureDeleted();
-                dbContext.Database.EnsureCreated();
-                DatabaseSeeder.SeedCategories(dbContext);
+                var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+
+                if (app.Environment.IsDevelopment())
+                {
+                    // В Development пересоздаем БД каждый раз
+                    logger.LogInformation("Development: Recreating database...");
+                    dbContext.Database.EnsureDeleted();
+                    dbContext.Database.EnsureCreated();
+                    DatabaseSeeder.SeedCategories(dbContext);
+                    logger.LogInformation("Development: Database recreated and seeded");
+                }
+                else
+                {
+                    // В Production создаем БД только если её нет
+                    try
+                    {
+                        var canConnect = dbContext.Database.CanConnect();
+
+                        if (canConnect)
+                        {
+                            // Проверяем есть ли таблицы
+                            var tableExists = dbContext.Categories.Any();
+                            logger.LogInformation("Production: Database tables exist, skipping initialization");
+                        }
+                        else
+                        {
+                            logger.LogInformation("Production: Database not found, creating...");
+                            dbContext.Database.EnsureCreated();
+                            DatabaseSeeder.SeedCategories(dbContext);
+                            logger.LogInformation("Production: Database created and seeded");
+                        }
+                    }
+                    catch (Exception ex) when (ex.Message.Contains("does not exist") || ex.Message.Contains("42P01"))
+                    {
+                        // Таблицы не существуют - создаем
+                        logger.LogInformation("Production: Database tables not found, creating...");
+                        dbContext.Database.EnsureCreated();
+                        DatabaseSeeder.SeedCategories(dbContext);
+                        logger.LogInformation("Production: Database created and seeded");
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogError(ex, "Error during database initialization");
+                        throw;
+                    }
+                }
             }
 
             // Swagger ������ ��� Development
