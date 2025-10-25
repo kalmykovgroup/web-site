@@ -4,13 +4,19 @@
 
 Все настроено для домена **volnaya-28.ru** с email **admin@kalmykov-group.ru**
 
-## Запуск одной командой
+## Запуск
 
 ```bash
-# Запустите проект
+# 1. Создайте секреты для базы данных
+mkdir -p secrets
+echo "kalmykov" > secrets/db_user.txt
+echo "xK9mN2pQ7rL4wZ8vB6hT3jF5nY1dC0sA9eR7uX4kM2gH6tP8bV3qW" > secrets/db_password.txt
+chmod 600 secrets/*
+
+# 2. Запустите проект
 docker compose up -d
 
-# Готово! Проверьте
+# 3. Готово! Проверьте
 curl -I http://volnaya-28.ru
 ```
 

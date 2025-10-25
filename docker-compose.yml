@@ -5,11 +5,13 @@ services:
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
-      # Используем переменные окружения из .env если secrets не доступны
-      POSTGRES_USER: ${DB_USER:-admin}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-changeme}
+      POSTGRES_USER_FILE: /run/secrets/db_user
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
       POSTGRES_DB: ${DB_NAME:-web_site}
       PGDATA: /var/lib/postgresql/data/pgdata
+    secrets:
+      - db_user
+      - db_password
     ports:
       - "5444:5432"
     volumes:
@@ -35,8 +37,9 @@ services:
       - DB_HOST=${DB_HOST:-postgres}
       - DB_PORT=${DB_PORT:-5432}
       - DB_NAME=${DB_NAME:-web_site}
-      - DB_USER=${DB_USER:-admin}
-      - DB_PASSWORD=${DB_PASSWORD:-changeme}
+    secrets:
+      - db_user
+      - db_password
     depends_on:
       postgres:
         condition: service_healthy
@@ -99,3 +102,9 @@ volumes:
 networks:
   website_network:
     driver: bridge
+
+secrets:
+  db_user:
+    file: ./secrets/db_user.txt
+  db_password:
+    file: ./secrets/db_password.txt
