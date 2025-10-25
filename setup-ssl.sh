@@ -96,14 +96,13 @@ EOF
     
     # Получение сертификата
     echo -e "${BLUE}🎫 Запрос сертификата от Let's Encrypt...${NC}"
-    
+
     if docker-compose run --rm certbot certonly \
         --webroot \
         --webroot-path=/var/www/certbot \
         --email $EMAIL \
         --agree-tos \
         --no-eff-email \
-        --force-renewal \
         -d $DOMAIN \
         -d www.$DOMAIN; then
         

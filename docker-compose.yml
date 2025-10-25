@@ -33,9 +33,6 @@ services:
       context: .
       dockerfile: WebSite.Api/Dockerfile
     restart: unless-stopped
-    ports:
-      - "5000:8080"
-      - "5001:8081"
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - ASPNETCORE_URLS=http://+:8080
@@ -49,9 +46,56 @@ services:
       - website_network
     volumes:
       - ./logs:/app/logs
+    expose:
+      - "8080"
+
+  # Nginx Reverse Proxy
+  nginx:
+    container_name: website_nginx
+    image: nginx:alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/docker-entrypoint.sh:/docker-entrypoint.sh:ro
+      - ./nginx/generate-config.sh:/etc/nginx/generate-config.sh:ro
+      - ./certbot/conf:/etc/letsencrypt:ro
+      - ./certbot/www:/var/www/certbot:ro
+      - nginx_cache:/var/cache/nginx
+    environment:
+      - DOMAIN=${DOMAIN:-localhost}
+      - AUTO_GENERATE_CONFIG=true
+    depends_on:
+      - webapi
+    networks:
+      - website_network
+    healthcheck:
+      test: ["CMD", "nginx", "-t"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    entrypoint: ["/bin/sh", "/docker-entrypoint.sh"]
+
+  # Certbot для SSL сертификатов
+  certbot:
+    container_name: website_certbot
+    image: certbot/certbot:latest
+    volumes:
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew --quiet; sleep 12h & wait $${!}; done;'"
+    depends_on:
+      - nginx
+    networks:
+      - website_network
 
 volumes:
   postgres_data:
+    driver: local
+  nginx_cache:
     driver: local
 
 networks:

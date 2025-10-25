@@ -21,6 +21,8 @@
 - AutoMapper
 - Swagger/OpenAPI
 - Docker & Docker Compose
+- Nginx (reverse proxy)
+- Let's Encrypt SSL (автоматическое управление)
 
 ## Требования
 
@@ -50,9 +52,11 @@ docker-compose up -d
 ```
 
 3. **Приложение доступно по адресам:**
-- API: http://localhost:5000
-- HTTPS: https://localhost:5001
+- HTTP: http://localhost
+- HTTPS: https://localhost (после настройки SSL)
 - PostgreSQL: localhost:5444
+
+**Примечание:** При первом запуске приложение работает только по HTTP. Для настройки HTTPS см. раздел [Настройка SSL](#настройка-ssl-сертификатов)
 
 ### Вариант 2: Локальная разработка
 
@@ -229,7 +233,68 @@ docker-compose exec postgres pg_isready -U $(cat secrets/db_user.txt)
 ```bash
 docker-compose logs -f webapi
 docker-compose logs -f postgres
+docker-compose logs -f nginx
 ```
+
+## Настройка SSL сертификатов
+
+Проект включает **умную систему управления SSL** с автоматической проверкой валидности.
+
+### Ключевые особенности
+
+- ✅ **Умная проверка**: Сертификат запрашивается только если отсутствует или невалиден
+- ✅ **Защита от повторных запросов**: `docker-compose build` не вызывает повторный выпуск
+- ✅ **Автоматическое обновление**: Certbot обновляет сертификаты каждые 12 часов
+- ✅ **Graceful fallback**: Приложение работает без SSL до его настройки
+
+### Быстрая настройка для production
+
+1. **Настройте DNS**: A-запись домена должна указывать на IP сервера
+
+2. **Создайте .env файл**:
+```bash
+cp .env.example .env
+# Отредактируйте DOMAIN=yourdomain.com
+```
+
+3. **Запустите приложение**:
+```bash
+docker-compose up -d
+```
+
+4. **Получите SSL сертификат**:
+```bash
+chmod +x setup-ssl.sh
+./setup-ssl.sh yourdomain.com your@email.com
+```
+
+5. **Перезапустите nginx**:
+```bash
+docker-compose restart nginx
+```
+
+Готово! Ваше приложение доступно по https://yourdomain.com
+
+### Как работает защита
+
+1. **При запуске контейнера**: Nginx проверяет наличие сертификата и его валидность (> 30 дней)
+2. **При вызове setup-ssl.sh**: Скрипт проверяет существующий сертификат перед запросом нового
+3. **Автоматическое обновление**: Certbot обновляет только истекающие сертификаты
+
+### Проверка статуса SSL
+
+```bash
+# Проверить наличие сертификата
+docker-compose exec nginx ls -la /etc/letsencrypt/live/
+
+# Проверить срок действия
+docker-compose exec nginx openssl x509 -enddate -noout -in /etc/letsencrypt/live/yourdomain.com/fullchain.pem
+
+# Логи certbot
+docker-compose logs certbot
+```
+
+**Подробная документация**: См. [SSL-SETUP.md](SSL-SETUP.md)
 
 ## Безопасность
 
