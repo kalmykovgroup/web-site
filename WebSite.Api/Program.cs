@@ -15,13 +15,13 @@ namespace WebSite.Api
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // ��������� �������������� � Sensitive Data Logging � Development
+            //  Sensitive Data Logging  Development
             builder.Logging.AddFilter("Microsoft.EntityFrameworkCore.Model.Validation", LogLevel.Error);
 
             // Add services to the container.
             builder.Services.AddControllers();
 
-            // Response Compression ������ ��� production
+            // Response Compression production
             if (!builder.Environment.IsDevelopment())
             {
                 builder.Services.AddResponseCompression(options =>
@@ -100,11 +100,28 @@ namespace WebSite.Api
                     }
                     else
                     {
-                        // Production CORS (��������� ��� ��� �����)
-                        policy.WithOrigins("https://yourdomain.com")
-                            .AllowAnyHeader()
-                            .AllowAnyMethod()
-                            .AllowCredentials();
+                        // Production CORS - читаем из переменной окружения
+                        var corsOrigins = builder.Configuration["CORS_ORIGINS"];
+
+                        if (!string.IsNullOrEmpty(corsOrigins))
+                        {
+                            var origins = corsOrigins.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                                                    .Select(o => o.Trim())
+                                                    .ToArray();
+
+                            policy.WithOrigins(origins)
+                                .AllowAnyHeader()
+                                .AllowAnyMethod()
+                                .AllowCredentials();
+                        }
+                        else
+                        {
+                            // Fallback если CORS_ORIGINS не задан
+                            policy.WithOrigins("https://yourdomain.com")
+                                .AllowAnyHeader()
+                                .AllowAnyMethod()
+                                .AllowCredentials();
+                        }
                     }
                 });
             });

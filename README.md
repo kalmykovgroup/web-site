@@ -146,10 +146,13 @@ https://localhost:5001/swagger
 | `DB_HOST` | Хост PostgreSQL | `postgres` |
 | `DB_PORT` | Порт PostgreSQL | `5432` |
 | `DB_NAME` | Имя базы данных | `web_site` |
-| `DB_USER` | Имя пользователя БД | - |
-| `DB_PASSWORD` | Пароль БД | - |
+| `DB_USER` | Имя пользователя БД | - (из secrets) |
+| `DB_PASSWORD` | Пароль БД | - (из secrets) |
 | `ASPNETCORE_ENVIRONMENT` | Окружение | `Production` |
 | `ASPNETCORE_URLS` | URL для прослушивания | `http://+:8080` |
+| `DOMAIN` | Домен для SSL | `localhost` |
+| `EMAIL` | Email для Let's Encrypt | - |
+| `CORS_ORIGINS` | Разрешенные CORS origins (через запятую) | - |
 
 ### Конфигурация безопасности
 
@@ -173,6 +176,7 @@ chmod 600 secrets/*
 - `DOMAIN` - домен для SSL сертификата
 - `EMAIL` - email для уведомлений Let's Encrypt
 - `DB_HOST`, `DB_PORT`, `DB_NAME` - параметры подключения к БД
+- `CORS_ORIGINS` - разрешенные CORS origins через запятую (например: `https://yourdomain.com,https://www.yourdomain.com`)
 
 **Важно:** Файл `.env` не содержит паролей, они в `secrets/` директории
 
@@ -198,24 +202,24 @@ nano .env
 Убедитесь что заданы:
 - `DOMAIN` - ваш домен
 - `EMAIL` - email для SSL сертификата
+- `CORS_ORIGINS` - разрешенные origins для CORS
+
+Пример `.env`:
+```env
+DOMAIN=yourdomain.com
+EMAIL=admin@yourdomain.com
+CORS_ORIGINS=https://yourdomain.com,https://www.yourdomain.com,https://app.yourdomain.com
+```
 
 **Примечание:** `DB_USER` и `DB_PASSWORD` не указываются в `.env`, они в `secrets/` директории
 
-### 3. Обновите CORS настройки (опционально)
-
-В `WebSite.Api/Program.cs` замените `yourdomain.com` на ваш реальный домен:
-
-```csharp
-policy.WithOrigins("https://yourdomain.com")
-```
-
-### 4. Запустите контейнеры
+### 3. Запустите контейнеры
 
 ```bash
 docker compose up -d
 ```
 
-### 5. Проверьте статус
+### 4. Проверьте статус
 
 ```bash
 docker compose ps

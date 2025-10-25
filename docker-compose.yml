@@ -37,6 +37,7 @@ services:
       - DB_HOST=${DB_HOST:-postgres}
       - DB_PORT=${DB_PORT:-5432}
       - DB_NAME=${DB_NAME:-web_site}
+      - CORS_ORIGINS=${CORS_ORIGINS}
     secrets:
       - db_user
       - db_password
