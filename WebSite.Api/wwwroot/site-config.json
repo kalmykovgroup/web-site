@@ -1,0 +1,103 @@
+{
+  "site": {
+    "title": "СтройХозМаг - Лакокрасочные материалы и стройматериалы в Москве",
+    "description": "Магазин строительных и лакокрасочных материалов СтройХозМаг. Широкий ассортимент красок, лаков, строительных материалов, товаров для дома и ремонта. Доставка по Москве и области.",
+    "keywords": "лакокрасочные материалы, краски, лаки, эмали, стройматериалы, товары для ремонта, строительный магазин, Москва, хозтовары, инструменты",
+    "author": "ИП Калмыкова Анна Олеговна",
+    "url": "https://volnaya-28.ru",
+    "lang": "ru",
+    "locale": "ru_RU",
+    "themeColor": "#2563eb"
+  },
+  "company": {
+    "name": "СтройХозМаг",
+    "fullName": "Индивидуальный предприниматель Калмыкова Анна Олеговна",
+    "legalForm": "ИП",
+    "owner": "Калмыкова Анна Олеговна",
+    "inn": "771877556532",
+    "ogrn": "323774600215422",
+    "registrationDate": "2023-04-03",
+    "city": "Москва",
+    "region": "г. Москва",
+    "address": "г. Москва, ул. Вольная, д. 28",
+    "postalCode": "105187",
+    "phone": "+79256427586",
+    "email": "kid2000@bk.ru",
+    "workingHours": "Пн-Пт: 09:00-20:00, Сб-Вс: 10:00-18:00",
+    "taxSystem": "УСН, ПСН",
+    "category": "Микропредприятие"
+  },
+  "activities": {
+    "main": {
+      "code": "47.52.2",
+      "name": "Торговля розничная лакокрасочными материалами в специализированных магазинах"
+    },
+    "additional": [
+      {
+        "code": "46.13",
+        "name": "Деятельность агентов по оптовой торговле лесоматериалами и строительными материалами"
+      },
+      {
+        "code": "47.71",
+        "name": "Торговля розничная одеждой в специализированных магазинах"
+      },
+      {
+        "code": "47.19.1",
+        "name": "Торговля розничная большим товарным ассортиментом"
+      },
+      {
+        "code": "47.29.3",
+        "name": "Торговля розничная прочими пищевыми продуктами"
+      },
+      {
+        "code": "47.62",
+        "name": "Торговля розничная газетами и канцелярскими товарами"
+      }
+    ]
+  },
+  "images": {
+    "favicon": "/favicon.svg",
+    "appleTouchIcon": "/apple-touch-icon.png",
+    "ogImage": "/og-image.png",
+    "twitterImage": "/twitter-image.png",
+    "logo": "/logo.svg"
+  },
+  "social": {
+    "ogType": "website",
+    "twitterCard": "summary_large_image",
+    "vk": "",
+    "telegram": "",
+    "whatsapp": "+79256427586",
+    "instagram": ""
+  },
+  "api": {
+    "preconnect": [],
+    "dnsPrefetch": [
+      "https://volnaya-28.ru"
+    ]
+  },
+  "features": {
+    "delivery": true,
+    "pickup": true,
+    "online24": false,
+    "catalog": true,
+    "cart": true,
+    "comparison": true,
+    "favorites": true,
+    "wholesale": true,
+    "retail": true
+  },
+  "seo": {
+    "gtmId": "",
+    "yandexMetrika": "",
+    "googleAnalytics": "",
+    "yandexWebmaster": "",
+    "googleSearchConsole": ""
+  },
+  "payment": {
+    "cash": true,
+    "card": true,
+    "online": true,
+    "invoice": true
+  }
+}
