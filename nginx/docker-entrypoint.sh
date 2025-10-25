@@ -42,12 +42,16 @@ if [ -d "$CERT_DIR" ]; then
     done
 fi
 
-# Генерируем конфигурацию если нужно
-if [ "$AUTO_GENERATE_CONFIG" = "true" ]; then
-    if [ -f "/etc/nginx/generate-config.sh" ]; then
-        echo "🔧 Generating nginx configuration..."
-        sh /etc/nginx/generate-config.sh || echo "⚠️  Config generation failed, using existing config"
-    fi
+# Генерируем конфигурацию ВСЕГДА (чтобы подставить актуальный DOMAIN)
+echo "🔧 Generating nginx configuration for domain: $DOMAIN"
+if [ -f "/etc/nginx/generate-config.sh" ]; then
+    sh /etc/nginx/generate-config.sh || {
+        echo "⚠️  Config generation failed, using existing config"
+        echo "⚠️  Make sure DOMAIN environment variable is set correctly"
+    }
+else
+    echo "⚠️  generate-config.sh not found, using existing config"
+    echo "⚠️  Domain in config may not match DOMAIN=$DOMAIN"
 fi
 
 # Информация о режиме работы

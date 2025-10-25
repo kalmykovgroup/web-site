@@ -1,5 +1,6 @@
 # Nginx configuration template
 # This file will be processed to generate actual config based on SSL availability
+# DOMAIN будет заменен на значение из переменной окружения
 
 # Upstream для ASP.NET Core API
 upstream api_backend {

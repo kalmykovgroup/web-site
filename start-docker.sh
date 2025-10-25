@@ -5,9 +5,15 @@
 
 set -e
 
+# Загружаем переменные из .env файла если он существует
+if [ -f .env ]; then
+    echo "📄 Загрузка конфигурации из .env файла..."
+    export $(grep -v '^#' .env | grep -v '^$' | xargs)
+fi
+
 PRODUCTION=false
-DOMAIN="yourdomain.com"
-EMAIL="your@email.com"
+DOMAIN="${DOMAIN:-yourdomain.com}"
+EMAIL="${EMAIL:-your@email.com}"
 
 # Цвета для вывода
 RED='\033[0;31m'

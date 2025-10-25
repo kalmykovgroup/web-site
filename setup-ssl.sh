@@ -6,8 +6,15 @@
 
 set -e
 
-DOMAIN=${1:-yourdomain.com}
-EMAIL=${2:-your@email.com}
+# Загружаем переменные из .env файла если он существует
+if [ -f .env ]; then
+    echo "📄 Загрузка конфигурации из .env файла..."
+    export $(grep -v '^#' .env | grep -v '^$' | xargs)
+fi
+
+# Приоритет: аргументы командной строки > .env файл > значения по умолчанию
+DOMAIN=${1:-${DOMAIN:-yourdomain.com}}
+EMAIL=${2:-${EMAIL:-your@email.com}}
 CERT_PATH="certbot/conf/live/$DOMAIN/fullchain.pem"
 MIN_DAYS_VALID=30  # Обновлять если осталось меньше 30 дней
 

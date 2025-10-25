@@ -14,4 +14,20 @@
     <None Include="setup-ssl.sh" />
     <None Include="start-docker.sh" />
   </ItemGroup>
+  <ItemGroup>
+    <Content Include=".env" />
+    <Content Include=".env.example" />
+    <Content Include="CHANGE-DOMAIN.md" />
+    <Content Include="DEPLOY.md" />
+    <Content Include="launchSettings.json" />
+    <Content Include="nginx\conf.d\default.conf" />
+    <Content Include="nginx\conf.d\default.conf.template" />
+    <Content Include="nginx\docker-entrypoint.sh" />
+    <Content Include="nginx\generate-config.sh" />
+    <Content Include="nginx\nginx.conf" />
+    <Content Include="PRODUCTION-READY.md" />
+    <Content Include="QUICK-START.md" />
+    <Content Include="README.md" />
+    <Content Include="SSL-SETUP.md" />
+  </ItemGroup>
 </Project>

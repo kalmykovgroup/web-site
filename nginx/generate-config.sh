@@ -10,7 +10,10 @@ KEY_PATH="/etc/letsencrypt/live/${DOMAIN}/privkey.pem"
 TEMPLATE="/etc/nginx/conf.d/default.conf.template"
 OUTPUT="/etc/nginx/conf.d/default.conf"
 
-echo "🔧 Генерация nginx конфигурации для домена: ${DOMAIN}"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "🔧 Генерация nginx конфигурации"
+echo "📍 Домен: ${DOMAIN}"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
 # Проверяем наличие SSL сертификата
 if [ -f "$CERT_PATH" ] && [ -f "$KEY_PATH" ]; then

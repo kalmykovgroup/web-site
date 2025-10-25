@@ -35,6 +35,21 @@
 - Docker Desktop / Docker Engine
 - Docker Compose
 
+## 🚀 Production развертывание
+
+**Домен**: volnaya-28.ru | **Email**: admin@kalmykov-group.ru
+
+Проект полностью готов к production развертыванию с автоматической настройкой SSL.
+
+```bash
+# Быстрый запуск (все настроено в .env)
+./start-docker.sh production
+```
+
+📚 **Подробная инструкция**: [DEPLOY.md](DEPLOY.md) | [PRODUCTION-READY.md](PRODUCTION-READY.md)
+
+---
+
 ## Быстрый старт
 
 ### Вариант 1: Запуск с Docker Compose (рекомендуется)
