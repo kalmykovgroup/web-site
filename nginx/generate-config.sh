@@ -7,7 +7,6 @@ set -e
 DOMAIN=${DOMAIN:-localhost}
 CERT_PATH="/etc/letsencrypt/live/${DOMAIN}/fullchain.pem"
 KEY_PATH="/etc/letsencrypt/live/${DOMAIN}/privkey.pem"
-TEMPLATE="/etc/nginx/conf.d/default.conf.template"
 OUTPUT="/etc/nginx/conf.d/default.conf"
 
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -19,18 +18,36 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 if [ -f "$CERT_PATH" ] && [ -f "$KEY_PATH" ]; then
     echo "✅ SSL сертификат найден, создаю конфигурацию с HTTPS"
 
-    # HTTP редирект на HTTPS
-    HTTP_LOCATION="return 301 https://\$server_name\$request_uri;"
+    # Создаем конфигурацию с HTTPS
+    cat > "$OUTPUT" << 'EOF'
+upstream api_backend {
+    server webapi:8080;
+    keepalive 32;
+}
 
-    # HTTPS сервер
-    HTTPS_SERVER="server {
+server {
+    listen 80;
+    listen [::]:80;
+    server_name DOMAIN_PLACEHOLDER www.DOMAIN_PLACEHOLDER;
+
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+        try_files $uri =404;
+    }
+
+    location / {
+        return 301 https://$server_name$request_uri;
+    }
+}
+
+server {
     listen 443 ssl http2;
     listen [::]:443 ssl http2;
-    server_name ${DOMAIN} www.${DOMAIN};
+    server_name DOMAIN_PLACEHOLDER www.DOMAIN_PLACEHOLDER;
 
     # SSL Configuration
-    ssl_certificate ${CERT_PATH};
-    ssl_certificate_key ${KEY_PATH};
+    ssl_certificate CERT_PATH_PLACEHOLDER;
+    ssl_certificate_key KEY_PATH_PLACEHOLDER;
     ssl_session_timeout 1d;
     ssl_session_cache shared:SSL:50m;
     ssl_session_tickets off;
@@ -41,12 +58,12 @@ if [ -f "$CERT_PATH" ] && [ -f "$KEY_PATH" ]; then
     ssl_prefer_server_ciphers off;
 
     # HSTS (опционально, раскомментируйте после тестирования)
-    # add_header Strict-Transport-Security \"max-age=31536000; includeSubDomains\" always;
+    # add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
 
     # OCSP Stapling
     ssl_stapling on;
     ssl_stapling_verify on;
-    ssl_trusted_certificate ${CERT_PATH};
+    ssl_trusted_certificate CERT_PATH_PLACEHOLDER;
 
     # Proxy to API
     location / {
@@ -54,13 +71,13 @@ if [ -f "$CERT_PATH" ] && [ -f "$KEY_PATH" ]; then
         proxy_http_version 1.1;
 
         # Headers
-        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection 'upgrade';
-        proxy_set_header Host \$host;
-        proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto \$scheme;
-        proxy_set_header X-Forwarded-Host \$server_name;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Host $server_name;
 
         # Timeouts
         proxy_connect_timeout 60s;
@@ -69,7 +86,7 @@ if [ -f "$CERT_PATH" ] && [ -f "$KEY_PATH" ]; then
 
         # Buffering
         proxy_buffering off;
-        proxy_cache_bypass \$http_upgrade;
+        proxy_cache_bypass $http_upgrade;
     }
 
     # Static files caching
@@ -77,46 +94,21 @@ if [ -f "$CERT_PATH" ] && [ -f "$KEY_PATH" ]; then
         proxy_pass http://api_backend;
         proxy_cache_valid 200 1d;
         expires 1d;
-        add_header Cache-Control \"public, immutable\";
+        add_header Cache-Control "public, immutable";
     }
-}"
+}
+EOF
+
+    # Заменяем placeholders
+    sed -i "s|DOMAIN_PLACEHOLDER|${DOMAIN}|g" "$OUTPUT"
+    sed -i "s|CERT_PATH_PLACEHOLDER|${CERT_PATH}|g" "$OUTPUT"
+    sed -i "s|KEY_PATH_PLACEHOLDER|${KEY_PATH}|g" "$OUTPUT"
+
 else
     echo "⚠️  SSL сертификат не найден, создаю конфигурацию только для HTTP"
 
-    # Проксируем напрямую без редиректа
-    HTTP_LOCATION="proxy_pass http://api_backend;
-        proxy_http_version 1.1;
-
-        # Headers
-        proxy_set_header Upgrade \$http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host \$host;
-        proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto \$scheme;
-
-        # Timeouts
-        proxy_connect_timeout 60s;
-        proxy_send_timeout 60s;
-        proxy_read_timeout 60s;
-
-        # Buffering
-        proxy_buffering off;
-        proxy_cache_bypass \$http_upgrade;"
-
-    # Нет HTTPS сервера
-    HTTPS_SERVER=""
-fi
-
-# Создаем конфигурацию из template
-if [ -f "$TEMPLATE" ]; then
-    sed -e "s|\${DOMAIN}|${DOMAIN}|g" \
-        -e "s|# SSL_REDIRECT_PLACEHOLDER|${HTTP_LOCATION}|g" \
-        -e "s|# SSL_SERVER_PLACEHOLDER|${HTTPS_SERVER}|g" \
-        "$TEMPLATE" > "$OUTPUT"
-else
-    # Если template нет, создаем базовую конфигурацию
-    cat > "$OUTPUT" << EOF
+    # Создаем конфигурацию без HTTPS
+    cat > "$OUTPUT" << 'EOF'
 upstream api_backend {
     server webapi:8080;
     keepalive 32;
@@ -125,20 +117,39 @@ upstream api_backend {
 server {
     listen 80;
     listen [::]:80;
-    server_name ${DOMAIN} www.${DOMAIN};
+    server_name DOMAIN_PLACEHOLDER www.DOMAIN_PLACEHOLDER;
 
     location /.well-known/acme-challenge/ {
         root /var/www/certbot;
-        try_files \$uri =404;
+        try_files $uri =404;
     }
 
     location / {
-        ${HTTP_LOCATION}
+        proxy_pass http://api_backend;
+        proxy_http_version 1.1;
+
+        # Headers
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        # Timeouts
+        proxy_connect_timeout 60s;
+        proxy_send_timeout 60s;
+        proxy_read_timeout 60s;
+
+        # Buffering
+        proxy_buffering off;
+        proxy_cache_bypass $http_upgrade;
     }
 }
-
-${HTTPS_SERVER}
 EOF
+
+    # Заменяем placeholders
+    sed -i "s|DOMAIN_PLACEHOLDER|${DOMAIN}|g" "$OUTPUT"
 fi
 
 echo "✅ Конфигурация создана: ${OUTPUT}"
