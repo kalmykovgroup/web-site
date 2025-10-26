@@ -200,18 +200,18 @@ namespace WebSite.Api
                 // Разные CSP для dev и production
                 var cspPolicy = app.Environment.IsDevelopment()
                     ? "default-src 'self'; " +
-                      "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://yandex.ru https://api-maps.yandex.ru; " +
+                      "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://yandex.ru https://api-maps.yandex.ru https://mc.yandex.ru; " +
                       "style-src 'self' 'unsafe-inline' https:; " +
-                      "img-src 'self' data: https:; " +
+                      "img-src 'self' data: https: https://mc.yandex.ru; " +
                       "font-src 'self' data: https:; " +
-                      "connect-src 'self' https: ws: wss: http://localhost:5175 https://localhost:5171 ws://localhost:5175; " +
+                      "connect-src 'self' https: ws: wss: http://localhost:5175 https://localhost:5171 ws://localhost:5175 https://mc.yandex.ru; " +
                       "frame-src https://yandex.ru https://api-maps.yandex.ru;"
                     : "default-src 'self'; " +
-                      "script-src 'self' https://yandex.ru https://api-maps.yandex.ru; " +
+                      "script-src 'self' https://yandex.ru https://api-maps.yandex.ru https://mc.yandex.ru; " +
                       "style-src 'self' 'unsafe-inline' https:; " +
-                      "img-src 'self' data: https:; " +
+                      "img-src 'self' data: https: https://mc.yandex.ru; " +
                       "font-src 'self' data: https:; " +
-                      "connect-src 'self' https:; " +
+                      "connect-src 'self' https: https://mc.yandex.ru; " +
                       "frame-src https://yandex.ru https://api-maps.yandex.ru; " +
                       "frame-ancestors 'none'; " +
                       "base-uri 'self'; " +

@@ -1,0 +1,1 @@
+import{r as e}from"./rolldown-runtime-CjiBMUN4.js";import{M as t,k as a}from"./react-vendor-CYFo1ZZ8.js";const o="_container_1t35t_1";var n={container:o},d=e(t()),r=e(a()),i=()=>(0,r.jsx)("div",{className:n.container,children:(0,r.jsx)("p",{children:"Page not found"})}),s=i;export{s as default};
