@@ -197,14 +197,15 @@ namespace WebSite.Api
             // Content Security Policy
             app.Use(async (context, next) =>
             {
-                // Secure CSP without unsafe-eval
+                // CSP with Yandex Maps support
                 context.Response.Headers.Append("Content-Security-Policy",
                     "default-src 'self'; " +
-                    "script-src 'self'; " +
-                    "style-src 'self' 'unsafe-inline'; " +
+                    "script-src 'self' 'unsafe-inline' https://yandex.ru https://api-maps.yandex.ru; " +
+                    "style-src 'self' 'unsafe-inline' https:; " +
                     "img-src 'self' data: https:; " +
-                    "font-src 'self' data:; " +
-                    "connect-src 'self' " + (app.Environment.IsDevelopment() ? "http://localhost:5175 https://localhost:5171 ws://localhost:5175" : "https://volnaya-28.ru") + "; " +
+                    "font-src 'self' data: https:; " +
+                    "connect-src 'self' https: " + (app.Environment.IsDevelopment() ? "http://localhost:5175 https://localhost:5171 ws://localhost:5175" : "") + "; " +
+                    "frame-src https://yandex.ru https://api-maps.yandex.ru; " +
                     "frame-ancestors 'none'; " +
                     "base-uri 'self'; " +
                     "form-action 'self'");
