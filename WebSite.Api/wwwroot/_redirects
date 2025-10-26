@@ -1,0 +1,14 @@
+# Netlify redirects file
+# Статические файлы обрабатываются напрямую, остальное перенаправляется на index.html
+
+# Static files - serve directly
+/sitemap.xml /sitemap.xml 200
+/robots.txt /robots.txt 200
+/manifest.json /manifest.json 200
+/favicon.svg /favicon.svg 200
+/sw.js /sw.js 200
+/registerSW.js /registerSW.js 200
+/workbox-*.js /workbox-*.js 200
+
+# SPA fallback - все остальное на index.html
+/* /index.html 200

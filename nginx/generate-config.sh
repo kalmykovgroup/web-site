@@ -65,6 +65,42 @@ server {
     ssl_stapling_verify on;
     ssl_trusted_certificate CERT_PATH_PLACEHOLDER;
 
+    # Важные статические файлы (sitemap, robots, manifest)
+    # Обрабатываются с особым заголовком для корректной работы в SPA
+    location ~* \.(xml|txt|json|webmanifest)$ {
+        proxy_pass http://api_backend;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Accept-Static-File "true";
+        expires 1d;
+        add_header Cache-Control "public, must-revalidate";
+    }
+
+    # Service Worker - не кэшировать
+    location ~* ^/(sw\.js|registerSW\.js|workbox-.*\.js)$ {
+        proxy_pass http://api_backend;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header Accept-Static-File "true";
+        expires -1;
+        add_header Cache-Control "no-cache, no-store, must-revalidate";
+    }
+
+    # Static files caching (изображения, стили, скрипты)
+    location ~* \.(jpg|jpeg|png|gif|ico|css|js|svg|woff|woff2|ttf|eot)$ {
+        proxy_pass http://api_backend;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header Accept-Static-File "true";
+        proxy_cache_valid 200 1d;
+        expires 1d;
+        add_header Cache-Control "public, immutable";
+    }
+
     # Proxy to API
     location / {
         proxy_pass http://api_backend;
@@ -87,14 +123,6 @@ server {
         # Buffering
         proxy_buffering off;
         proxy_cache_bypass $http_upgrade;
-    }
-
-    # Static files caching
-    location ~* \.(jpg|jpeg|png|gif|ico|css|js|svg|woff|woff2|ttf|eot)$ {
-        proxy_pass http://api_backend;
-        proxy_cache_valid 200 1d;
-        expires 1d;
-        add_header Cache-Control "public, immutable";
     }
 }
 EOF
@@ -122,6 +150,37 @@ server {
     location /.well-known/acme-challenge/ {
         root /var/www/certbot;
         try_files $uri =404;
+    }
+
+    # Важные статические файлы (sitemap, robots, manifest)
+    location ~* \.(xml|txt|json|webmanifest)$ {
+        proxy_pass http://api_backend;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header Accept-Static-File "true";
+        expires 1d;
+        add_header Cache-Control "public, must-revalidate";
+    }
+
+    # Service Worker - не кэшировать
+    location ~* ^/(sw\.js|registerSW\.js|workbox-.*\.js)$ {
+        proxy_pass http://api_backend;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header Accept-Static-File "true";
+        expires -1;
+        add_header Cache-Control "no-cache, no-store, must-revalidate";
+    }
+
+    # Static files caching
+    location ~* \.(jpg|jpeg|png|gif|ico|css|js|svg|woff|woff2|ttf|eot)$ {
+        proxy_pass http://api_backend;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header Accept-Static-File "true";
+        expires 1d;
+        add_header Cache-Control "public, immutable";
     }
 
     location / {

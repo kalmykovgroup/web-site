@@ -257,8 +257,42 @@ namespace WebSite.Api
 
             app.MapControllers();
 
-            // SPA Fallback - ��������������� ���� ��-API �������� �� index.html
-            app.MapFallbackToFile("index.html");
+            // SPA Fallback - перенаправляем только не-статические файлы на index.html
+            // Исключаем важные статические файлы (sitemap, robots, manifest, sw)
+            app.MapFallback(async context =>
+            {
+                var path = context.Request.Path.Value?.ToLowerInvariant() ?? "";
+
+                // Список файлов которые НЕ должны попадать под SPA fallback
+                var staticFiles = new[]
+                {
+                    "/sitemap.xml",
+                    "/robots.txt",
+                    "/manifest.json",
+                    "/sw.js",
+                    "/registersw.js",
+                    "/.htaccess",
+                    "/_redirects"
+                };
+
+                // Если запрос к одному из статических файлов - пропускаем fallback
+                if (staticFiles.Any(file => path.Equals(file, StringComparison.OrdinalIgnoreCase)))
+                {
+                    context.Response.StatusCode = 404;
+                    return;
+                }
+
+                // Если запрос к workbox файлам - пропускаем fallback
+                if (path.StartsWith("/workbox-") && path.EndsWith(".js"))
+                {
+                    context.Response.StatusCode = 404;
+                    return;
+                }
+
+                // Для всех остальных запросов - отдаем index.html (SPA fallback)
+                context.Request.Path = "/index.html";
+                await context.Response.SendFileAsync(Path.Combine(context.RequestServices.GetRequiredService<IWebHostEnvironment>().WebRootPath, "index.html"));
+            });
 
             app.Run();
         }
