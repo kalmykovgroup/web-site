@@ -93,7 +93,7 @@ namespace WebSite.Api
                 {
                     if (builder.Environment.IsDevelopment())
                     {
-                        policy.WithOrigins("http://localhost:5175")
+                        policy.WithOrigins("http://localhost:5175", "https://localhost:5171", "https://localhost:5173")
                             .AllowAnyHeader()
                             .AllowAnyMethod()
                             .AllowCredentials();
@@ -193,6 +193,31 @@ namespace WebSite.Api
             {
                 app.UseResponseCompression();
             }
+
+            // Content Security Policy
+            app.Use(async (context, next) =>
+            {
+                // Secure CSP without unsafe-eval
+                context.Response.Headers.Append("Content-Security-Policy",
+                    "default-src 'self'; " +
+                    "script-src 'self'; " +
+                    "style-src 'self' 'unsafe-inline'; " +
+                    "img-src 'self' data: https:; " +
+                    "font-src 'self' data:; " +
+                    "connect-src 'self' " + (app.Environment.IsDevelopment() ? "http://localhost:5175 https://localhost:5171 ws://localhost:5175" : "https://volnaya-28.ru") + "; " +
+                    "frame-ancestors 'none'; " +
+                    "base-uri 'self'; " +
+                    "form-action 'self'");
+
+                // Additional security headers
+                context.Response.Headers.Append("X-Content-Type-Options", "nosniff");
+                context.Response.Headers.Append("X-Frame-Options", "DENY");
+                context.Response.Headers.Append("X-XSS-Protection", "1; mode=block");
+                context.Response.Headers.Append("Referrer-Policy", "strict-origin-when-cross-origin");
+                context.Response.Headers.Append("Permissions-Policy", "geolocation=(), microphone=(), camera=()");
+
+                await next();
+            });
 
             app.UseHttpsRedirection();
             app.UseCors("AllowFrontend");

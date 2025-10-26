@@ -1,0 +1,1 @@
+import{f as a,h as e,p as t}from"./index-BnasqfWL.js";const o="_container_1t35t_1";var n={container:o},u=e(t()),r=e(a()),_=()=>(0,r.jsx)("div",{className:n.container,children:(0,r.jsx)("p",{children:"Page not found"})}),d=_;export{d as default};
