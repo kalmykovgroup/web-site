@@ -197,18 +197,27 @@ namespace WebSite.Api
             // Content Security Policy
             app.Use(async (context, next) =>
             {
-                // CSP with Yandex Maps support
-                context.Response.Headers.Append("Content-Security-Policy",
-                    "default-src 'self'; " +
-                    "script-src 'self' 'unsafe-inline' https://yandex.ru https://api-maps.yandex.ru; " +
-                    "style-src 'self' 'unsafe-inline' https:; " +
-                    "img-src 'self' data: https:; " +
-                    "font-src 'self' data: https:; " +
-                    "connect-src 'self' https: " + (app.Environment.IsDevelopment() ? "http://localhost:5175 https://localhost:5171 ws://localhost:5175" : "") + "; " +
-                    "frame-src https://yandex.ru https://api-maps.yandex.ru; " +
-                    "frame-ancestors 'none'; " +
-                    "base-uri 'self'; " +
-                    "form-action 'self'");
+                // Разные CSP для dev и production
+                var cspPolicy = app.Environment.IsDevelopment()
+                    ? "default-src 'self'; " +
+                      "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://yandex.ru https://api-maps.yandex.ru; " +
+                      "style-src 'self' 'unsafe-inline' https:; " +
+                      "img-src 'self' data: https:; " +
+                      "font-src 'self' data: https:; " +
+                      "connect-src 'self' https: ws: wss: http://localhost:5175 https://localhost:5171 ws://localhost:5175; " +
+                      "frame-src https://yandex.ru https://api-maps.yandex.ru;"
+                    : "default-src 'self'; " +
+                      "script-src 'self' https://yandex.ru https://api-maps.yandex.ru; " +
+                      "style-src 'self' 'unsafe-inline' https:; " +
+                      "img-src 'self' data: https:; " +
+                      "font-src 'self' data: https:; " +
+                      "connect-src 'self' https:; " +
+                      "frame-src https://yandex.ru https://api-maps.yandex.ru; " +
+                      "frame-ancestors 'none'; " +
+                      "base-uri 'self'; " +
+                      "form-action 'self'";
+
+                context.Response.Headers.Append("Content-Security-Policy", cspPolicy);
 
                 // Additional security headers
                 context.Response.Headers.Append("X-Content-Type-Options", "nosniff");
