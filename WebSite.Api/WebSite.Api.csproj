@@ -21,4 +21,13 @@
     <ProjectReference Include="..\WebSite.Infrastructure\WebSite.Infrastructure.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <_ContentIncludedByDefault Remove="wwwroot\assets\HomePage-BGS0cX0p.css" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\HomePage-tkaBgjYr.js" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\index-CjeYzzB_.css" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\index-Cs6tfeW3.js" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\PageNotFound-CJFIYKXK.css" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\PageNotFound-Crl9jtMS.js" />
+  </ItemGroup>
+
 </Project>
