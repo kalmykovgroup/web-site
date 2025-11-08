@@ -1,5 +1,6 @@
 using AutoMapper;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using WebSite.Domain.Contracts.Dtos.SpecialOffers;
 using WebSite.Domain.Models;
 
@@ -14,7 +15,8 @@ namespace WebSite.Infrastructure.Mapper
             _jsonOptions = new JsonSerializerOptions
             {
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
+                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+                Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) }
             };
 
             // Entity -> DTO
