@@ -1,7 +1,13 @@
 {
   "permissions": {
     "allow": [
-      "Bash(dir:*)"
+      "Bash(dir:*)",
+      "Bash(git log:*)",
+      "Bash(git checkout:*)",
+      "Bash(dotnet build:*)",
+      "Bash(dotnet restore:*)",
+      "Bash(dotnet add:*)",
+      "Bash(git add:*)"
     ],
     "deny": [],
     "ask": []

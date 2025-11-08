@@ -14,6 +14,7 @@ namespace WebSite.Infrastructure.Database
 
         public DbSet<Category> Categories { get; set; }
         public DbSet<CategoryImage> CategoryImages { get; set; }
+        public DbSet<SpecialOffer> SpecialOffers { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -22,6 +23,7 @@ namespace WebSite.Infrastructure.Database
             // Применяем конфигурации
             modelBuilder.ApplyConfiguration(new CategoryConfiguration());
             modelBuilder.ApplyConfiguration(new CategoryImageConfiguration());
+            modelBuilder.ApplyConfiguration(new SpecialOfferConfiguration());
 
             
         }

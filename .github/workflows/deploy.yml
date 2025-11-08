@@ -1,0 +1,113 @@
+name: Deploy to Linux Server via Docker
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Create deployment archive
+      run: |
+        # Исключаем ненужные файлы и директории
+        tar -czf website-deploy.tar.gz \
+          --exclude='.git' \
+          --exclude='.github' \
+          --exclude='.vs' \
+          --exclude='bin' \
+          --exclude='obj' \
+          --exclude='*.user' \
+          --exclude='node_modules' \
+          .
+
+    - name: Copy files to server
+      uses: appleboy/scp-action@v0.1.7
+      with:
+        host: ${{ secrets.SSH_HOST }}
+        username: ${{ secrets.SSH_USERNAME }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        port: ${{ secrets.SSH_PORT }}
+        source: "website-deploy.tar.gz"
+        target: "/tmp"
+
+    - name: Deploy with Docker Compose
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.SSH_HOST }}
+        username: ${{ secrets.SSH_USERNAME }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        port: ${{ secrets.SSH_PORT }}
+        envs: DB_USER,DB_PASSWORD,DOMAIN,EMAIL,CORS_ORIGINS
+        script: |
+          set -e
+
+          # Переменные
+          DEPLOY_DIR="/var/www/website"
+
+          # Создаем директорию если не существует
+          mkdir -p $DEPLOY_DIR
+
+          # Создаем бэкап предыдущей версии
+          if [ -d "$DEPLOY_DIR/current" ]; then
+            echo "Creating backup..."
+            rm -rf $DEPLOY_DIR/backup
+            mv $DEPLOY_DIR/current $DEPLOY_DIR/backup
+          fi
+
+          # Создаем новую директорию
+          mkdir -p $DEPLOY_DIR/current
+
+          # Распаковываем новую версию
+          echo "Extracting new version..."
+          tar -xzf /tmp/website-deploy.tar.gz -C $DEPLOY_DIR/current
+
+          # Переходим в директорию проекта
+          cd $DEPLOY_DIR/current
+
+          # Создаем директорию для секретов если не существует
+          mkdir -p secrets
+
+          # Создаем файлы секретов (используем GitHub Secrets)
+          echo "${{ secrets.DB_USER }}" > secrets/db_user.txt
+          echo "${{ secrets.DB_PASSWORD }}" > secrets/db_password.txt
+
+          # Создаем .env файл если не существует
+          if [ ! -f .env ]; then
+            cat > .env << EOF
+          DB_NAME=web_site
+          DB_HOST=postgres
+          DB_PORT=5432
+          ASPNETCORE_ENVIRONMENT=Production
+          DOMAIN=${{ secrets.DOMAIN }}
+          EMAIL=${{ secrets.EMAIL }}
+          CORS_ORIGINS=${{ secrets.CORS_ORIGINS }}
+          EOF
+          fi
+
+          # Останавливаем старые контейнеры
+          echo "Stopping old containers..."
+          docker-compose down || true
+
+          # Собираем и запускаем новые контейнеры
+          echo "Building and starting containers..."
+          docker-compose up -d --build
+
+          # Проверяем статус
+          echo "Checking container status..."
+          docker-compose ps
+
+          # Показываем логи
+          echo "Recent logs:"
+          docker-compose logs --tail=50
+
+          # Очистка
+          rm -f /tmp/website-deploy.tar.gz
+
+          echo "Deployment completed successfully!"

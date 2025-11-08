@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using WebSite.Api.Middleware;
 using WebSite.Application.Handlers;
 using WebSite.Domain.Interfaces;
 using WebSite.Infrastructure.Database;
@@ -19,7 +20,19 @@ namespace WebSite.Api
             builder.Logging.AddFilter("Microsoft.EntityFrameworkCore.Model.Validation", LogLevel.Error);
 
             // Add services to the container.
-            builder.Services.AddControllers();
+            builder.Services.AddControllers()
+                .AddJsonOptions(options =>
+                {
+                    // Настройка для правильной сериализации enum в camelCase
+                    options.JsonSerializerOptions.Converters.Add(
+                        new System.Text.Json.Serialization.JsonStringEnumConverter(System.Text.Json.JsonNamingPolicy.CamelCase));
+
+                    // Настройка для camelCase свойств
+                    options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+
+                    // Игнорировать null значения
+                    options.JsonSerializerOptions.DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
+                });
 
             // Response Compression production
             if (!builder.Environment.IsDevelopment())
@@ -81,10 +94,37 @@ namespace WebSite.Api
             {
                 cfg.AddProfile<CategoryProfile>();
                 cfg.AddProfile<CategoryImageProfile>();
+                cfg.AddProfile<SpecialOfferProfile>();
             });
 
             // �����������
             builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
+            builder.Services.AddScoped<ISpecialOffersRepository, SpecialOffersRepository>();
+
+            // Получаем connection string для использования в Health Checks
+            var healthCheckConnectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+            if (string.IsNullOrEmpty(healthCheckConnectionString) || !healthCheckConnectionString.Contains("Password="))
+            {
+                var dbHost = builder.Configuration["DB_HOST"] ?? "postgres";
+                var dbPort = builder.Configuration["DB_PORT"] ?? "5432";
+                var dbName = builder.Configuration["DB_NAME"] ?? "web_site";
+                var dbUser = builder.Configuration["DB_USER"] ?? ReadDockerSecret("db_user") ?? throw new InvalidOperationException("DB_USER not found");
+                var dbPassword = builder.Configuration["DB_PASSWORD"] ?? ReadDockerSecret("db_password") ?? throw new InvalidOperationException("DB_PASSWORD not found");
+
+                healthCheckConnectionString = $"Host={dbHost};Port={dbPort};Database={dbName};Username={dbUser};Password={dbPassword}";
+            }
+
+            // Health Checks для мониторинга состояния БД
+            builder.Services.AddHealthChecks()
+                .AddDbContextCheck<AppDbContext>(
+                    name: "database",
+                    failureStatus: Microsoft.Extensions.Diagnostics.HealthChecks.HealthStatus.Unhealthy,
+                    tags: new[] { "db", "postgres" })
+                .AddNpgSql(
+                    healthCheckConnectionString,
+                    name: "postgres",
+                    failureStatus: Microsoft.Extensions.Diagnostics.HealthChecks.HealthStatus.Unhealthy,
+                    tags: new[] { "db", "postgres" });
 
             // CORS
             builder.Services.AddCors(options =>
@@ -128,55 +168,104 @@ namespace WebSite.Api
 
             var app = builder.Build();
 
-            // Database initialization and seeding
+            // Database initialization and seeding with retry policy
             using (var scope = app.Services.CreateScope())
             {
                 var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
                 var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
 
-                if (app.Environment.IsDevelopment())
+                // Реализуем retry логику с экспоненциальной задержкой
+                try
                 {
-                    // В Development пересоздаем БД каждый раз
-                    logger.LogInformation("Development: Recreating database...");
-                    dbContext.Database.EnsureDeleted();
-                    dbContext.Database.EnsureCreated();
-                    DatabaseSeeder.SeedCategories(dbContext);
-                    logger.LogInformation("Development: Database recreated and seeded");
-                }
-                else
-                {
-                    // В Production создаем БД только если её нет
-                    try
-                    {
-                        var canConnect = dbContext.Database.CanConnect();
+                    const int maxRetries = 5;
+                    int retryCount = 0;
+                    bool success = false;
 
-                        if (canConnect)
-                        {
-                            // Проверяем есть ли таблицы
-                            var tableExists = dbContext.Categories.Any();
-                            logger.LogInformation("Production: Database tables exist, skipping initialization");
-                        }
-                        else
-                        {
-                            logger.LogInformation("Production: Database not found, creating...");
-                            dbContext.Database.EnsureCreated();
-                            DatabaseSeeder.SeedCategories(dbContext);
-                            logger.LogInformation("Production: Database created and seeded");
-                        }
-                    }
-                    catch (Exception ex) when (ex.Message.Contains("does not exist") || ex.Message.Contains("42P01"))
+                    while (retryCount < maxRetries && !success)
                     {
-                        // Таблицы не существуют - создаем
-                        logger.LogInformation("Production: Database tables not found, creating...");
-                        dbContext.Database.EnsureCreated();
-                        DatabaseSeeder.SeedCategories(dbContext);
-                        logger.LogInformation("Production: Database created and seeded");
+                        try
+                        {
+                            if (app.Environment.IsDevelopment())
+                            {
+                                // В Development пересоздаем БД каждый раз
+                                logger.LogInformation("Development: Recreating database...");
+                                dbContext.Database.EnsureDeleted();
+                                dbContext.Database.EnsureCreated();
+                                DatabaseSeeder.SeedCategories(dbContext);
+                                DatabaseSeeder.SeedSpecialOffers(dbContext);
+                                logger.LogInformation("Development: Database recreated and seeded");
+                            }
+                            else
+                            {
+                                // В Production создаем БД только если её нет
+                                var canConnect = dbContext.Database.CanConnect();
+
+                                if (canConnect)
+                                {
+                                    // Проверяем есть ли таблицы
+                                    try
+                                    {
+                                        var tableExists = dbContext.Categories.Any();
+                                        logger.LogInformation("Production: Database tables exist, skipping initialization");
+                                    }
+                                    catch (Exception ex) when (ex.Message.Contains("does not exist") || ex.Message.Contains("42P01"))
+                                    {
+                                        // Таблицы не существуют - создаем
+                                        logger.LogInformation("Production: Database tables not found, creating...");
+                                        dbContext.Database.EnsureCreated();
+                                        DatabaseSeeder.SeedCategories(dbContext);
+                                        DatabaseSeeder.SeedSpecialOffers(dbContext);
+                                        logger.LogInformation("Production: Database created and seeded");
+                                    }
+                                }
+                                else
+                                {
+                                    logger.LogInformation("Production: Database not found, creating...");
+                                    dbContext.Database.EnsureCreated();
+                                    DatabaseSeeder.SeedCategories(dbContext);
+                                    DatabaseSeeder.SeedSpecialOffers(dbContext);
+                                    logger.LogInformation("Production: Database created and seeded");
+                                }
+                            }
+
+                            success = true;
+                        }
+                        catch (Exception ex) when (
+                            ex is Npgsql.NpgsqlException ||
+                            ex is System.Net.Sockets.SocketException ||
+                            ex is TimeoutException)
+                        {
+                            retryCount++;
+                            if (retryCount < maxRetries)
+                            {
+                                var delay = TimeSpan.FromSeconds(Math.Pow(2, retryCount));
+                                logger.LogWarning(
+                                    ex,
+                                    "Database connection attempt {RetryCount} of {MaxRetries} failed. Waiting {Delay} seconds before next retry...",
+                                    retryCount,
+                                    maxRetries,
+                                    delay.TotalSeconds);
+
+                                Thread.Sleep(delay);
+                            }
+                            else
+                            {
+                                throw;
+                            }
+                        }
                     }
-                    catch (Exception ex)
-                    {
-                        logger.LogError(ex, "Error during database initialization");
-                        throw;
-                    }
+                }
+                catch (Exception ex)
+                {
+                    // После всех попыток БД все еще недоступна - логируем и продолжаем работу
+                    logger.LogCritical(
+                        ex,
+                        "CRITICAL: Unable to connect to database after multiple retries. " +
+                        "Application will start but database operations will fail. " +
+                        "Please check database connectivity and configuration.");
+
+                    // Не бросаем исключение - позволяем приложению запуститься
+                    // Health checks покажут, что БД недоступна
                 }
             }
 
@@ -232,12 +321,36 @@ namespace WebSite.Api
             app.UseHttpsRedirection();
             app.UseCors("AllowFrontend");
 
-            // ����������� ����� ��� React ����������
+            // Глобальная обработка ошибок БД
+            app.UseDatabaseExceptionHandling();
+
+            // Статические файлы для React приложения
+            var provider = new Microsoft.AspNetCore.StaticFiles.FileExtensionContentTypeProvider();
+            // Добавляем явные MIME-типы для всех типов файлов
+            provider.Mappings[".html"] = "text/html; charset=utf-8";
+            provider.Mappings[".css"] = "text/css; charset=utf-8";
+            provider.Mappings[".js"] = "application/javascript; charset=utf-8";
+            provider.Mappings[".json"] = "application/json; charset=utf-8";
+            provider.Mappings[".xml"] = "application/xml; charset=utf-8";
+            provider.Mappings[".txt"] = "text/plain; charset=utf-8";
+            provider.Mappings[".svg"] = "image/svg+xml";
+            provider.Mappings[".png"] = "image/png";
+            provider.Mappings[".jpg"] = "image/jpeg";
+            provider.Mappings[".jpeg"] = "image/jpeg";
+            provider.Mappings[".gif"] = "image/gif";
+            provider.Mappings[".ico"] = "image/x-icon";
+            provider.Mappings[".woff"] = "font/woff";
+            provider.Mappings[".woff2"] = "font/woff2";
+            provider.Mappings[".ttf"] = "font/ttf";
+            provider.Mappings[".eot"] = "application/vnd.ms-fontobject";
+            provider.Mappings[".webmanifest"] = "application/manifest+json";
+
             app.UseStaticFiles(new StaticFileOptions
             {
+                ContentTypeProvider = provider,
                 OnPrepareResponse = ctx =>
                 {
-                    // ����������� ����������� ������ (js, css, �����������)
+                    // Долгосрочное кеширование ресурсов (js, css, изображения)
                     if (ctx.File.Name.EndsWith(".js") ||
                         ctx.File.Name.EndsWith(".css") ||
                         ctx.File.Name.EndsWith(".woff") ||
@@ -256,6 +369,43 @@ namespace WebSite.Api
             app.UseAuthorization();
 
             app.MapControllers();
+
+            // Health Check endpoints
+            app.MapHealthChecks("/health", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+            {
+                ResponseWriter = async (context, report) =>
+                {
+                    context.Response.ContentType = "application/json";
+                    var result = System.Text.Json.JsonSerializer.Serialize(new
+                    {
+                        status = report.Status.ToString(),
+                        timestamp = DateTime.UtcNow,
+                        duration = report.TotalDuration,
+                        checks = report.Entries.Select(e => new
+                        {
+                            name = e.Key,
+                            status = e.Value.Status.ToString(),
+                            description = e.Value.Description,
+                            duration = e.Value.Duration,
+                            exception = e.Value.Exception?.Message,
+                            data = e.Value.Data
+                        })
+                    });
+                    await context.Response.WriteAsync(result);
+                }
+            });
+
+            // Простой liveness endpoint для быстрой проверки, что приложение работает
+            app.MapHealthChecks("/health/live", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+            {
+                Predicate = _ => false // Не проверяет зависимости, только то что приложение запущено
+            });
+
+            // Readiness endpoint - проверяет готовность к обработке запросов (включая БД)
+            app.MapHealthChecks("/health/ready", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+            {
+                Predicate = check => check.Tags.Contains("db")
+            });
 
             // SPA Fallback - перенаправляем только не-статические файлы на index.html
             // Исключаем важные статические файлы (sitemap, robots, manifest, sw)
@@ -291,6 +441,7 @@ namespace WebSite.Api
 
                 // Для всех остальных запросов - отдаем index.html (SPA fallback)
                 context.Request.Path = "/index.html";
+                context.Response.ContentType = "text/html; charset=utf-8";
                 await context.Response.SendFileAsync(Path.Combine(context.RequestServices.GetRequiredService<IWebHostEnvironment>().WebRootPath, "index.html"));
             });
 
