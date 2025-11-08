@@ -85,19 +85,19 @@ jobs:
 
           # Останавливаем старые контейнеры
           echo "Stopping old containers..."
-          docker-compose down || true
+          docker compose down || true
 
           # Собираем и запускаем новые контейнеры
           echo "Building and starting containers..."
-          docker-compose up -d --build
+          docker compose up -d --build
 
           # Проверяем статус
           echo "Checking container status..."
-          docker-compose ps
+          docker compose ps
 
           # Показываем логи
           echo "Recent logs:"
-          docker-compose logs --tail=50
+          docker compose logs --tail=50
 
           # Очистка
           rm -f /tmp/website-deploy.tar.gz
